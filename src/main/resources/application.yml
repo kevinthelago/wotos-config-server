@@ -1,0 +1,38 @@
+server:
+  port: ${CONFIG_SERVER_PORT:4040}
+
+spring:
+  application:
+    name: wotos-config-server
+  cloud:
+    config:
+      server:
+        git:
+          # Backing config repository. Public by default; override the URI and
+          # supply credentials via env vars when pointing at a private repo.
+          uri: ${CONFIG_GIT_URI:https://github.com/Kevin-Lago/wotos-config.git}
+          username: ${CONFIG_GIT_USERNAME:}
+          password: ${CONFIG_GIT_PASSWORD:}
+  # HTTP Basic credentials that downstream services use to read their config.
+  # Real values MUST be supplied via environment variables in every non-local
+  # environment (GitHub Actions secrets in CI, the secret manager in prod).
+  # The defaults below exist only for local development and are not secrets.
+  security:
+    user:
+      name: ${CONFIG_SERVER_USERNAME:config}
+      password: ${CONFIG_SERVER_PASSWORD:local-dev-only}
+      roles: ADMIN
+
+# Symmetric config encryption is enabled by setting the ENCRYPT_KEY environment
+# variable (Spring Cloud Config reads it natively). With it set, the /encrypt
+# and /decrypt endpoints work and {cipher}... values in the backing repo are
+# decrypted before being served. The key itself is never stored in source.
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
