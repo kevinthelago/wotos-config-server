@@ -64,6 +64,50 @@ curl -u "$CONFIG_SERVER_USERNAME:$CONFIG_SERVER_PASSWORD" \
   http://localhost:4040/encrypt -d 'my-secret-value'
 ```
 
+## Deployment
+
+### Docker Compose
+
+```yaml
+services:
+  wotos-config-server:
+    image: wotos/config-server:latest
+    ports:
+      - "4040:4040"
+    environment:
+      CONFIG_SERVER_USERNAME: ${CONFIG_SERVER_USERNAME}
+      CONFIG_SERVER_PASSWORD: ${CONFIG_SERVER_PASSWORD}
+      ENCRYPT_KEY: ${ENCRYPT_KEY}           # required in non-dev; use a strong random string
+      CONFIG_GIT_URI: ${CONFIG_GIT_URI}
+```
+
+Generate a strong key: `openssl rand -hex 32`
+
+Store the key in your secret manager (AWS Secrets Manager, GCP Secret Manager, HashiCorp Vault)
+and inject it at runtime — never commit it to source control.
+
+### Kubernetes
+
+```yaml
+env:
+  - name: ENCRYPT_KEY
+    valueFrom:
+      secretKeyRef:
+        name: wotos-config-server-secrets
+        key: encrypt-key
+```
+
+Create the secret: `kubectl create secret generic wotos-config-server-secrets --from-literal=encrypt-key='<your-key>'`
+
+### GitHub Actions CI
+
+```yaml
+env:
+  ENCRYPT_KEY: ${{ secrets.ENCRYPT_KEY }}
+```
+
+Add `ENCRYPT_KEY` as a repository secret in **Settings → Secrets and variables → Actions**.
+
 ## Building
 
 ```bash
